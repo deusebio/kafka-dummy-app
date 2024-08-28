@@ -40,6 +40,9 @@ jobs:
         id: outputs
         shell: bash
         run: |
+          export BOOTSTRAP_SERVER=${{ steps.kafka.outputs.bootstrap-server }}
+          export USERNAME=${{ steps.kafka.outputs.username }}
+          export PASSWORD=${{ steps.kafka.outputs.password }}
           echo "enrico"
 
       # - name: Run Simple Job
