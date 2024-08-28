@@ -33,8 +33,8 @@ jobs:
         id: kafka
         uses: deusebio/setup-kafka-action@dummy-implementation
         with:
-          zookeeper-units: 3
-          broker-units: 3
+          zookeeper-units: 1
+          broker-units: 1
 
       - name: Run Simple Job
         shell: bash
