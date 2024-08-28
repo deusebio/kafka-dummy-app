@@ -24,7 +24,7 @@ process_id = os.urandom(15).hex()
 @app.command()
 def create_topic(
     topic_name: str,
-    num_partitions: str = 6, replication_factor: int = 3,
+    num_partitions: int = 6, replication_factor: int = 3,
     username: str = "user", password: str = "password",
     bootstrap_server: str = "localhost:9092",
     cafile_path: str | None = None,
