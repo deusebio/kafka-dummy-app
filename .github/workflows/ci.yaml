@@ -41,7 +41,7 @@ jobs:
         run: |
           export BOOTSTRAP_SERVER=${{ steps.kafka.outputs.bootstrap-server }}
           export USERNAME=${{ steps.kafka.outputs.username }}
-          export PASSWORD=${{ steps.kafka.outputs.password }}"
+          export PASSWORD=${{ steps.kafka.outputs.password }}
           
           python -m kafka_app.main producer test-topic 180 --username $USERNAME --password $PASSWORD --bootstrap-server $BOOTSTRAP_SERVER
 	  
