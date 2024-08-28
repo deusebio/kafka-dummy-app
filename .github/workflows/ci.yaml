@@ -31,7 +31,7 @@ jobs:
 
       - name: Setup Kafka
         id: kafka
-        uses: deusebio/setup-kafka-action@dummy-implementation
+        uses: deusebio/setup-kafka-action@main
         with:
           zookeeper-units: 1
           broker-units: 1

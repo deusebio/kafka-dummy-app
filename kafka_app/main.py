@@ -27,6 +27,7 @@ def create_topic(
     num_partitions: str = 6, replication_factor: int = 3,
     username: str = "user", password: str = "password",
     bootstrap_server: str = "localhost:9092",
+    cafile_path: str | None = None,
 ):
     client = KafkaClient(
         servers=bootstrap_server.split(","),
