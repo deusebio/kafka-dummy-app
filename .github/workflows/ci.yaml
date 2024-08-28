@@ -37,10 +37,11 @@ jobs:
           broker-units: 3
 
       - name: Run Simple Job
+        shell: bash
         run: |
           BOOTSTRAP_SERVER=${{ steps.kafka.outputs.bootstrap-server }}"
           USERNAME=${{ steps.kafka.outputs.username }}"
           PASSWORD=${{ steps.kafka.outputs.password }}"
-
+          
           python -m kafka_app.main producer test-topic 180 --username $USERNAME --password $PASSWORD --bootstrap-server $BOOTSTRAP_SERVER
 	  
