@@ -39,9 +39,9 @@ jobs:
       - name: Run Simple Job
         shell: bash
         run: |
-          BOOTSTRAP_SERVER=${{ steps.kafka.outputs.bootstrap-server }}"
-          USERNAME=${{ steps.kafka.outputs.username }}"
-          PASSWORD=${{ steps.kafka.outputs.password }}"
+          export BOOTSTRAP_SERVER=${{ steps.kafka.outputs.bootstrap-server }}
+          export USERNAME=${{ steps.kafka.outputs.username }}
+          export PASSWORD=${{ steps.kafka.outputs.password }}"
           
           python -m kafka_app.main producer test-topic 180 --username $USERNAME --password $PASSWORD --bootstrap-server $BOOTSTRAP_SERVER
 	  
