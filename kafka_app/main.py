@@ -1,7 +1,6 @@
 import logging
 
 from kafka.admin import NewTopic
-from kafka.errors import TopicAlreadyExistsError
 import os
 
 import time
@@ -23,6 +22,30 @@ logger = logging.getLogger(__name__)
 process_id = os.urandom(15).hex()
 
 @app.command()
+def create_topic(
+    topic_name: str,
+    num_partitions: str = 6, replication_factor: int = 3,
+    username: str = "user", password: str = "password",
+    bootstrap_server: str = "localhost:9092",
+):
+    client = KafkaClient(
+        servers=bootstrap_server.split(","),
+        username=username,
+        password=password,
+        cafile_path=cafile_path
+    )
+
+    topic_config = NewTopic(
+        name=topic_name,
+        num_partitions=num_partitions, replication_factor=replication_factor
+    )
+
+    logger.info(f"Creating new topic - {topic_name}")
+
+    client.create_topic(topic=topic_config)
+
+
+@app.command()
 def producer(
     topic_name: str,
     num_messages: int,
@@ -36,18 +59,6 @@ def producer(
         password=password,
         cafile_path=cafile_path
     )
-
-    topic_config = NewTopic(
-        name=topic_name,
-        num_partitions=5, replication_factor=1
-    )
-
-    logger.info(f"Creating new topic - {topic_name}")
-
-    try:
-        client.create_topic(topic=topic_config)
-    except TopicAlreadyExistsError:
-        logger.info(f"Topic {topic_name} already exists")
 
     logger.info("Producer - Starting...")
     for ith in range(num_messages):
