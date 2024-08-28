@@ -1,0 +1,76 @@
+# Copyright 2022 Canonical Ltd.
+# See LICENSE file for licensing details.
+name: Under-replicated Tests
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+on:
+  pull_request:
+  workflow_call:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - id: setup-python
+        name: Setup Python
+        uses: actions/setup-python@v5.1.0
+        with:
+          python-version: "3.10"
+          architecture: x64
+
+      - name: Install App
+        shell: bash
+        run: pip install .
+
+      - name: Setup Kafka
+        id: kafka
+        uses: deusebio/setup-kafka-action@main
+        with:
+          zookeeper-units: 1
+          broker-units: 1
+
+      - name: Test failure with under-replication topic
+        shell: bash
+        run: |
+          set +e
+          
+          export BOOTSTRAP_SERVER=${{ steps.kafka.outputs.bootstrap-server }}
+          export USERNAME=${{ steps.kafka.outputs.username }}
+          export PASSWORD=${{ steps.kafka.outputs.password }}
+          
+          OUTPUT=$(
+            python -m kafka_app.main create-topic test-topic --num-partitions 6 \
+              --replication-factor 3 --username $USERNAME \
+              --password $PASSWORD --bootstrap-server $BOOTSTRAP_SERVER
+          )
+          
+          if [[ $? == 0 ]]; then 
+            echo "!!!! ERROR !!!! The topic creation should not have worked"
+            exit 1
+          fi 
+          
+          juju add-unit kafka -n2
+          juju wait-for unit kafka/1 --query='life=="alive" && workload-status=="active" && agent-status=="idle"' --timeout 30m0s
+          juju wait-for unit kafka/2 --query='life=="alive" && workload-status=="active" && agent-status=="idle"' --timeout 30m0s
+          
+          juju status
+          
+          OUTPUT=$(
+            python -m kafka_app.main create-topic test-topic --num-partitions 6 \
+              --replication-factor 3 --username $USERNAME \
+              --password $PASSWORD --bootstrap-server $BOOTSTRAP_SERVER
+          )
+          
+          if [[ $? != 0 ]]; then 
+            echo "!!!! ERROR !!!! The topic creation should have worked"
+            exit 1
+          fi
+          
+          echo "Test successfully passed!"
