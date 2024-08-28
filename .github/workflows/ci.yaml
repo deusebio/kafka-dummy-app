@@ -43,7 +43,7 @@ jobs:
           export USERNAME=${{ steps.kafka.outputs.username }}
           export PASSWORD=${{ steps.kafka.outputs.password }}
           
-          python -m kafka_app.main create_topic test-topic --num-partitions 6 \
+          python -m kafka_app.main create-topic test-topic --num-partitions 6 \
             --replication-factor 1 --username $USERNAME \
             --password $PASSWORD --bootstrap-server $BOOTSTRAP_SERVER
           
