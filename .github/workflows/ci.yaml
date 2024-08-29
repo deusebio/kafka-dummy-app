@@ -11,7 +11,21 @@ on:
   workflow_call:
 
 jobs:
-  test:
+  lint:
+    name: Lint
+    runs-on: ubuntu-22.04
+    timeout-minutes: 5
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+      - name: Install tox
+        run: python3 -m pip install tox
+      - name: Install Poetry
+        uses: snok/install-poetry@v1
+      - name: Run linters
+        run: tox run -e lint
+
+  tests:
     runs-on: ubuntu-latest
     timeout-minutes: 30
     steps:

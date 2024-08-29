@@ -1,0 +1,44 @@
+# Copyright 2022 Canonical Ltd.
+# See LICENSE file for licensing details.
+name: Python Integration Tests
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+on:
+  pull_request:
+  workflow_call:
+
+jobs:
+  tests:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Install tox
+        run: python3 -m pip install tox
+
+      - name: Install Poetry
+        uses: snok/install-poetry@v1
+
+      - id: setup-python
+        name: Setup Python
+        uses: actions/setup-python@v5.1.0
+        with:
+          python-version: "3.10"
+          architecture: x64
+
+      - name: Setup Kafka
+        id: kafka
+        uses: deusebio/setup-kafka-action@main
+        with:
+          zookeeper-units: 1
+          broker-units: 1
+
+      - name: Integration tests
+        shell: bash
+        run: |
+          tox -e integration

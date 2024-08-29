@@ -62,18 +62,19 @@ from kafka.admin import NewTopic
 
 logger = logging.getLogger(__name__)
 
+
 class KafkaClient:
     """Simplistic KafkaClient built on top of kafka-python."""
 
     API_VERSION = (2, 5, 0)
 
     def __init__(
-            self,
-            servers: List[str],
-            username: Optional[str],
-            password: Optional[str],
-            cafile_path: Optional[str] = None,
-            replication_factor: int = 3,
+        self,
+        servers: List[str],
+        username: Optional[str],
+        password: Optional[str],
+        cafile_path: Optional[str] = None,
+        replication_factor: int = 3,
     ) -> None:
         self.servers = servers
         self.username = username
@@ -83,8 +84,8 @@ class KafkaClient:
 
         self.security_protocol = "SASL_SSL" if cafile_path else "SASL_PLAINTEXT"
 
-        self._subscription = None
-        self._consumer_group_prefix = None
+        self._subscription: Optional[str] = None
+        self._consumer_group_prefix: Optional[str] = None
 
     @cached_property
     def _admin_client(self) -> KafkaAdminClient:
@@ -142,8 +143,7 @@ class KafkaClient:
         Args:
             topic: the configuration of the topic to create
         """
-        self._admin_client.create_topics(new_topics=[topic],
-                                         validate_only=False)
+        self._admin_client.create_topics(new_topics=[topic], validate_only=False)
 
     def delete_topics(self, topics: list[str]) -> None:
         """Deletes a topic.
@@ -154,7 +154,7 @@ class KafkaClient:
         self._admin_client.delete_topics(topics=topics)
 
     def subscribe_to_topic(
-            self, topic_name: str, consumer_group_prefix: Optional[str] = None
+        self, topic_name: str, consumer_group_prefix: Optional[str] = None
     ) -> None:
         """Subscribes client to a specific topic, called when wishing to run a Consumer client.
 
@@ -189,8 +189,9 @@ class KafkaClient:
 
         yield from self._consumer_client
 
-    def produce_message(self, topic_name: str, message_content: bytes,
-                        timeout: int = 30) -> None:
+    def produce_message(
+        self, topic_name: str, message_content: bytes, timeout: int = 30
+    ) -> None:
         """Sends message to target topic on the cluster.
 
         Requires `KafkaClient` username to have `TOPIC WRITE` ACL permissions
@@ -207,7 +208,7 @@ class KafkaClient:
         future = self._producer_client.send(topic_name, message_content)
         future.get(timeout=timeout)
         logger.debug(
-            f"Message published to topic={topic_name}, message content: {message_content}"
+            f"Message published to topic={topic_name}, message content: {message_content.decode('utf-8')}"
         )
 
     def close(self) -> None:
@@ -215,5 +216,3 @@ class KafkaClient:
         self._admin_client.close()
         self._producer_client.close()
         self._consumer_client.close()
-
-
