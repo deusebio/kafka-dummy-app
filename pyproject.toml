@@ -1,0 +1,20 @@
+[tool.poetry]
+name = "kafka-app"
+version = "0.1.0"
+description = "Simple Kafka App to be tested"
+authors = ["Enrico Deusebio <enrico.deusebio@canonical.com>"]
+readme = "README.md"
+
+[tool.poetry.scripts]
+kafka-app = "kafka_app.main:app"
+
+[tool.poetry.dependencies]
+python = "^3.10"
+typer = "^0.12.3"
+kafka-python = ">=2.0"
+pymongo = "^4.3.3"
+pandas = ">2.0.0"
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"

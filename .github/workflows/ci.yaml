@@ -1,0 +1,51 @@
+# Copyright 2022 Canonical Ltd.
+# See LICENSE file for licensing details.
+name: Tests
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+on:
+  pull_request:
+  workflow_call:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - id: setup-python
+        name: Setup Python
+        uses: actions/setup-python@v5.1.0
+        with:
+          python-version: "3.10"
+          architecture: x64
+
+      - name: Install App
+        shell: bash
+        run: pip install .
+
+      - name: Setup Kafka
+        id: kafka
+        uses: deusebio/setup-kafka-action@main
+        with:
+          zookeeper-units: 1
+          broker-units: 1
+
+      - name: Run Simple Job
+        shell: bash
+        run: |
+          export BOOTSTRAP_SERVER=${{ steps.kafka.outputs.bootstrap-server }}
+          export USERNAME=${{ steps.kafka.outputs.username }}
+          export PASSWORD=${{ steps.kafka.outputs.password }}
+          
+          python -m kafka_app.main create-topic test-topic --num-partitions 6 \
+            --replication-factor 1 --username $USERNAME \
+            --password $PASSWORD --bootstrap-server $BOOTSTRAP_SERVER
+          
+          python -m kafka_app.main producer test-topic 180 --username $USERNAME \
+            --password $PASSWORD --bootstrap-server $BOOTSTRAP_SERVER
