@@ -1,18 +1,15 @@
 import logging
-
-from kafka.admin import NewTopic
 import os
-
 import time
+import uuid
 
 import pandas as pd
-
+import typer
+from kafka.admin import NewTopic
 from pymongo import MongoClient
 from pymongo.errors import DuplicateKeyError
-from kafka_app.core import KafkaClient
-import typer
 
-import uuid
+from kafka_app.core import KafkaClient
 
 app = typer.Typer()
 logging.basicConfig(level=logging.INFO)
@@ -21,11 +18,14 @@ logger = logging.getLogger(__name__)
 
 process_id = os.urandom(15).hex()
 
+
 @app.command()
 def create_topic(
     topic_name: str,
-    num_partitions: int = 6, replication_factor: int = 3,
-    username: str = "user", password: str = "password",
+    num_partitions: int = 6,
+    replication_factor: int = 3,
+    username: str = "user",
+    password: str = "password",
     bootstrap_server: str = "localhost:9092",
     cafile_path: str | None = None,
 ):
@@ -33,12 +33,13 @@ def create_topic(
         servers=bootstrap_server.split(","),
         username=username,
         password=password,
-        cafile_path=cafile_path
+        cafile_path=cafile_path,
     )
 
     topic_config = NewTopic(
         name=topic_name,
-        num_partitions=num_partitions, replication_factor=replication_factor
+        num_partitions=num_partitions,
+        replication_factor=replication_factor,
     )
 
     logger.info(f"Creating new topic - {topic_name}")
@@ -50,7 +51,8 @@ def create_topic(
 def producer(
     topic_name: str,
     num_messages: int,
-    username: str = "user", password: str = "password",
+    username: str = "user",
+    password: str = "password",
     bootstrap_server: str = "localhost:9092",
     cafile_path: str | None = None,
 ):
@@ -58,7 +60,7 @@ def producer(
         servers=bootstrap_server.split(","),
         username=username,
         password=password,
-        cafile_path=cafile_path
+        cafile_path=cafile_path,
     )
 
     logger.info("Producer - Starting...")
@@ -70,19 +72,22 @@ def producer(
         )
         time.sleep(1.0)
 
+
 @app.command()
 def consumer(
-    topic_name: str, consumer_group: str = "cg",
-    username: str = "user", password: str = "password",
+    topic_name: str,
+    consumer_group: str = "cg",
+    username: str = "user",
+    password: str = "password",
     bootstrap_server: str = "localhost:9092",
     cafile_path: str | None = None,
-    mongo_uri: str | None = None
+    mongo_uri: str | None = None,
 ):
     client = KafkaClient(
         servers=bootstrap_server.split(","),
         username=username,
         password=password,
-        cafile_path=cafile_path
+        cafile_path=cafile_path,
     )
 
     if mongo_uri:
@@ -92,16 +97,22 @@ def consumer(
         collection = None
 
     logger.info("Consumer - Starting...")
-    client.subscribe_to_topic(topic_name=topic_name,
-                              consumer_group_prefix=consumer_group)
+    client.subscribe_to_topic(
+        topic_name=topic_name, consumer_group_prefix=consumer_group
+    )
 
     for message in client.messages():
         logger.info(message)
         content = message.value.decode("utf-8")
         origin_id, sequence_number = content.split("-")
-        content = {"_id": uuid.uuid4().hex, "content": content,
-                   "origin_id": origin_id, "sequence_number": sequence_number,
-                   "destination": process_id, "consumer_group": consumer_group}
+        content = {
+            "_id": uuid.uuid4().hex,
+            "content": content,
+            "origin_id": origin_id,
+            "sequence_number": sequence_number,
+            "destination": process_id,
+            "consumer_group": consumer_group,
+        }
         if collection is not None:
             try:
                 collection.insert_one(content)
@@ -111,8 +122,10 @@ def consumer(
 
 @app.command()
 def report(
-    topic_name: str, mongo_uri: str, fields: str = "destination",
-    output: str | None = None
+    topic_name: str,
+    mongo_uri: str,
+    fields: str = "destination",
+    output: str | None = None,
 ):
     fields_lst = [field.strip() for field in fields.split(",")]
 
@@ -121,17 +134,18 @@ def report(
     mongo_client = MongoClient(mongo_uri)
     collection = mongo_client[topic_name].get_collection("consumer")
 
-    items = collection.aggregate([
-        {"$group": {"_id": keys, "count": {"$sum": 1}}}
-    ])
+    items = collection.aggregate([{"$group": {"_id": keys, "count": {"$sum": 1}}}])
 
-    df = pd.DataFrame([
-        item["_id"] | {key: item[key] for key in item if key != "_id"}
-        for item in items
-    ]).set_index(fields_lst)
+    df = pd.DataFrame(
+        [
+            item["_id"] | {key: item[key] for key in item if key != "_id"}
+            for item in items
+        ]
+    ).set_index(fields_lst)
 
     if output:
         df.to_csv(output)
+
 
 if __name__ == "__main__":
     app()
