@@ -1,6 +1,6 @@
 # Copyright 2022 Canonical Ltd.
 # See LICENSE file for licensing details.
-name: Tests
+name: Base Tests
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
