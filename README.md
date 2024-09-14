@@ -60,5 +60,7 @@ report <topic-name> <mongo_uri>
 
 For exporting a report of the received messages in the MongoDB database. Use the `--fields` parameter to customize the export fields messages need to be aggregate against.
 
+## License
 
+The Kafka Dummy App is free software, distributed under the Apache Software License, version 2.0. See LICENSE for more information.
 
