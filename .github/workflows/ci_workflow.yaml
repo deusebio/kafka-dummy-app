@@ -1,0 +1,54 @@
+# Copyright 2022 Canonical Ltd.
+# See LICENSE file for licensing details.
+name: Manual workflows
+
+on:
+  workflow_dispatch:
+    inputs:
+      broker-units:
+        type: int
+        description: Number of broker to be used
+        default: 1
+      topic-replication:
+        type: int
+        description: Replication factor for the topic to be used
+        default: 1
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - id: setup-python
+        name: Setup Python
+        uses: actions/setup-python@v5.1.0
+        with:
+          python-version: "3.10"
+          architecture: x64
+
+      - name: Install App
+        shell: bash
+        run: pip install .
+
+      - name: Setup Kafka
+        id: kafka
+        uses: deusebio/setup-kafka-action@main
+        with:
+          zookeeper-units: 1
+          broker-units: ${{ github.event.inputs.broker-units }}
+
+      - name: Test topic-creation
+        shell: bash
+        run: |
+          export BOOTSTRAP_SERVER=${{ steps.kafka.outputs.bootstrap-server }}
+          export USERNAME=${{ steps.kafka.outputs.username }}
+          export PASSWORD=${{ steps.kafka.outputs.password }}
+          
+          echo "Bootstrap servers: $BOOTSTRAP_SERVER"
+          
+          python -m kafka_app.main create-topic test-topic --num-partitions 6 \
+            --replication-factor ${{ github.event.inputs.topic-replication }} --username $USERNAME \
+            --password $PASSWORD --bootstrap-server $BOOTSTRAP_SERVER
