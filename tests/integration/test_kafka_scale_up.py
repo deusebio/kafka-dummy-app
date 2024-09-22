@@ -77,7 +77,9 @@ async def test_juju_connection(model: Model):
 
 
 @pytest.mark.asyncio
-async def test_non_replicated_topic_creation(kafka_credentials: KafkaCredentials):
+async def test_non_replicated_topic_creation(
+        kafka_credentials: KafkaCredentials
+):
     client = KafkaClient(
         servers=kafka_credentials.bootstrap_servers,
         username=kafka_credentials.username,
@@ -96,7 +98,9 @@ async def test_non_replicated_topic_creation(kafka_credentials: KafkaCredentials
 
 
 @pytest.mark.asyncio
-async def test_replicated_topic_creation_ko(kafka_credentials: KafkaCredentials):
+async def test_replicated_topic_creation_ko(
+        kafka_credentials: KafkaCredentials
+):
     client = KafkaClient(
         servers=kafka_credentials.bootstrap_servers,
         username=kafka_credentials.username,
