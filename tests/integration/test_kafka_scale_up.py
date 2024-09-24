@@ -1,3 +1,4 @@
+from dataclasses import dataclass
 from typing import Optional
 from uuid import uuid4
 
@@ -14,6 +15,13 @@ from numpy.distutils.system_info import NotFoundError
 from kafka_app.main import KafkaClient
 
 
+@dataclass
+class KafkaCredentials:
+    username: str
+    password: str
+    bootstrap_servers: list[str]
+
+
 @pytest_asyncio.fixture
 async def model() -> Model:
     current_model = Model()
@@ -25,9 +33,16 @@ async def model() -> Model:
     await current_model.disconnect()
 
 
-async def get_credentials(
-    model: Model, app_name: str = "user"
-) -> tuple[str, str, list]:
+@pytest.fixture
+def app_name():
+    return "user"
+
+
+@pytest_asyncio.fixture
+async def kafka_credentials(
+    model: Model,
+    app_name: str,
+) -> KafkaCredentials:
     user: Application = model.applications[app_name]
 
     leader: Optional[Unit] = None
@@ -47,9 +62,11 @@ async def get_credentials(
 
     username = kafka_data["username"]
     password = kafka_data["password"]
-    bootstrap_server = kafka_data["endpoints"].split(",")
+    bootstrap_servers = kafka_data["endpoints"].split(",")
 
-    return username, password, bootstrap_server
+    return KafkaCredentials(
+        username=username, password=password, bootstrap_servers=bootstrap_servers
+    )
 
 
 @pytest.mark.asyncio
@@ -60,10 +77,12 @@ async def test_juju_connection(model: Model):
 
 
 @pytest.mark.asyncio
-async def test_non_replicated_topic_creation(model: Model):
-    username, password, bootstrap_server = await get_credentials(model, "user")
-
-    client = KafkaClient(servers=bootstrap_server, username=username, password=password)
+async def test_non_replicated_topic_creation(kafka_credentials: KafkaCredentials):
+    client = KafkaClient(
+        servers=kafka_credentials.bootstrap_servers,
+        username=kafka_credentials.username,
+        password=kafka_credentials.password,
+    )
 
     topic_name = uuid4().hex
 
@@ -77,10 +96,12 @@ async def test_non_replicated_topic_creation(model: Model):
 
 
 @pytest.mark.asyncio
-async def test_replicated_topic_creation_ko(model: Model):
-    username, password, bootstrap_server = await get_credentials(model, "user")
-
-    client = KafkaClient(servers=bootstrap_server, username=username, password=password)
+async def test_replicated_topic_creation_ko(kafka_credentials: KafkaCredentials):
+    client = KafkaClient(
+        servers=kafka_credentials.bootstrap_servers,
+        username=kafka_credentials.username,
+        password=kafka_credentials.password,
+    )
 
     topic_name = uuid4().hex
 
@@ -95,7 +116,9 @@ async def test_replicated_topic_creation_ko(model: Model):
 
 
 @pytest.mark.asyncio
-async def test_replicated_topic_creation_ok(model: Model):
+async def test_replicated_topic_creation_ok(
+    model: Model, kafka_credentials: KafkaCredentials
+):
 
     kafka: Application = model.applications["kafka"]
     await kafka.add_unit(2)
@@ -103,9 +126,11 @@ async def test_replicated_topic_creation_ok(model: Model):
     # Scaling up the Kafka cluster
     await model.wait_for_idle(apps=["kafka"], status="active")
 
-    username, password, bootstrap_server = await get_credentials(model, "user")
-
-    client = KafkaClient(servers=bootstrap_server, username=username, password=password)
+    client = KafkaClient(
+        servers=kafka_credentials.bootstrap_servers,
+        username=kafka_credentials.username,
+        password=kafka_credentials.password,
+    )
 
     topic_name = uuid4().hex
 
